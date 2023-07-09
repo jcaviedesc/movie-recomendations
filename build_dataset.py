@@ -14,7 +14,7 @@ import numpy as np
 # In[156]:
 
 
-df = pd.read_csv('Dataset/movies_dataset.csv')
+df = pd.read_csv('https://docs.google.com/spreadsheets/d/1KciHYTdWhIxwonM9_QMBksT8SV4wmtbsUiBQRdS2gzE/edit?usp=drive_link')
 df_credits = pd.read_csv('Dataset/credits.csv')
 
 # describo los datos
