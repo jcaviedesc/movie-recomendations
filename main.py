@@ -2,6 +2,10 @@ from typing import Union
 from fastapi import FastAPI
 from urllib.parse import unquote
 import pandas as pd
+# Import linear_kernel
+from sklearn.metrics.pairwise import linear_kernel
+#Import TfIdfVectorizer from scikit-learn
+from sklearn.feature_extraction.text import TfidfVectorizer
 
 app = FastAPI()
 
@@ -65,3 +69,41 @@ def get_director(nombre_director: str):
     return {'director': nombre_director, 'total_revenue': revenue, 'movies': lista_pelis}
 
 
+
+#Define a TF-IDF Vectorizer Object. Remove all english stop words such as 'the', 'a'
+tfidf = TfidfVectorizer(stop_words='english')
+
+#Replace NaN with an empty string
+movies_df['overview'] = movies_df['overview'].fillna('')
+
+#Construct the required TF-IDF matrix by fitting and transforming the data
+tfidf_matrix = tfidf.fit_transform(movies_df['overview'])
+
+#Construct a reverse map of indices and movie titles
+indices = pd.Series(movies_df.index, index=movies_df['title']).drop_duplicates()
+
+cosine_sim = linear_kernel(tfidf_matrix, tfidf_matrix)
+
+# Function that takes in movie title as input and outputs most similar movies
+def get_recommendations(title, cosine_sim=cosine_sim):
+    # Get the index of the movie that matches the title
+    idx = indices[title]
+
+    # Get the pairwsie similarity scores of all movies with that movie
+    sim_scores = list(enumerate(cosine_sim[idx]))
+
+    # Sort the movies based on the similarity scores
+    sim_scores = sorted(sim_scores, key=lambda x: x[1], reverse=True)
+
+    # Get the scores of the 10 most similar movies
+    sim_scores = sim_scores[1:6]
+
+    # Get the movie indices
+    movie_indices = [i[0] for i in sim_scores]
+
+    # Return the top 10 most similar movies
+    return movies_df['title'].iloc[movie_indices]
+
+@app.get("/recomendaciones/{titulo}")
+def recomendacion(titulo:str):
+    return get_recommendations(titulo)
